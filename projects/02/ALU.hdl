@@ -42,5 +42,43 @@ CHIP ALU {
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+    // create null array[16]
+    Not16 (in=x, out=null1);
+    And16 (a=x, b=null1, out=nullarr);
+
+    // zeroing (if zx == 1, out = nullarr)
+    Mux16 (a=x, b=nullarr, sel=zx, out=tmpx);
+    Mux16 (a=y, b=nullarr, sel=zy, out=tmpy);
+
+    // negating
+    Not16 (in=tmpx, out=notx);
+    Not16 (in=tmpy, out=noty);
+    Mux16 (a=tmpx, b=notx, sel=nx, out=realx);
+    Mux16 (a=tmpy, b=noty, sel=ny, out=realy);
+
+    // now process f, if f==1: x+y, else: x&y
+    Add16 (a=realx, b=realy, out=xplusy);
+    And16 (a=realx, b=realy, out=xandy);
+    Mux16 (a=xandy, b=xplusy, sel=f, out=afterf);
+
+    // process no(negate output);
+    Not16 (in=afterf, out=negated);
+    // make out tmp to process with output flags(zr, ng)
+    Mux16 (a=afterf, b=negated, sel=no, out=tmpout); 
+
+    // first, flush tmpout to out
+    Or16 (a=tmpout, b=nullarr, out=out);
+
+    // divide tmpout to high and low and msb
+    Or16 (a=tmpout, b=nullarr, out[0..7]=highout, out[8..15]=lowout, out[15]=msbout);
+    // use two Or8way's to check if out==0
+    Or8Way  (in=highout, out=high0);
+    Or8Way  (in=lowout, out=low0);
+    Or      (a=high0, b=low0, out=outisnot0); // if outisnot0 == 1: out is not zero
+    Mux     (a=true, b=false, sel=outisnot0, out=zr);
+
+    // check msb to see if out < 0
+    // if tmpout[15] == 1, ng = true
+    Mux  (a=false, b=true, sel=msbout, out=ng);
+
 }

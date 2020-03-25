@@ -1,0 +1,70 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/01/DMux8Way.hdl
+
+/**
+ * 8-way demultiplexor:
+ * {a, b, c, d, e, f, g, h} = {in, 0, 0, 0, 0, 0, 0, 0} if sel == 000
+ *                            {0, in, 0, 0, 0, 0, 0, 0} if sel == 001
+ *                            etc.
+ *                            {0, 0, 0, 0, 0, 0, 0, in} if sel == 111
+ */
+
+CHIP DMux8Way {
+    IN in, sel[3];
+    OUT a, b, c, d, e, f, g, h;
+
+    PARTS:
+    // reeat DMux4Way code but with & not(sel[2]) on all is[a,b,c,d]
+    // Not(sel[2]) for a,b,c,d
+    Not (in=sel[2], out=first4);
+
+   	// send in to a if sel == 00
+    Or  (a=sel[0], b=sel[1], out=orsel);
+    Not (in=orsel, out=isa);
+    And (a=first4, b=isa, out=isreallya);
+    And (a=in, b=isreallya, out=a);
+
+    // xor for both b and c
+    Xor (a=sel[0], b=sel[1], out=xorsel);
+
+    // send in to b if sel == 01
+    And (a=sel[0], b=xorsel, out=isb);
+    And (a=first4, b=isb, out=isreallyb);
+    And (a=in, b=isreallyb, out=b);
+
+    // send in to c if sel == 10
+    And (a=sel[1], b=xorsel, out=isc);
+    And (a=first4, b=isc, out=isreallyc);
+    And (a=in, b=isreallyc, out=c);
+
+    // send in to d if sel == 11
+    And (a=sel[0], b=sel[1], out=isd);
+    And (a=first4, b=isd, out=isreallyd);
+    And (a=in, b=isreallyd, out=d);
+
+   	// repeat DMux4Way code but with & sel[2] on all is[e,f,g,h]
+   	// send in to e if sel == 00
+   	// orsel is already done above
+    Not (in=orsel, out=ise);
+    And (a=sel[2], b=isa, out=isreallye);
+    And (a=in, b=isreallye, out=e);
+
+
+    // send in to f if sel == 01
+    // xorsel is already done above
+    And (a=sel[0], b=xorsel, out=isf);
+    And (a=sel[2], b=isf, out=isreallyf);
+    And (a=in, b=isreallyf, out=f);
+
+    // send in to g if sel == 10
+    And (a=sel[1], b=xorsel, out=isg);
+    And (a=sel[2], b=isg, out=isreallyg);
+    And (a=in, b=isreallyg, out=g);
+
+    // send in to h if sel == 11
+    And (a=sel[0], b=sel[1], out=ish);
+    And (a=sel[2], b=ish, out=isreallyh);
+    And (a=in, b=isreallyh, out=h);
+}

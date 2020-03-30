@@ -15,5 +15,21 @@ CHIP RAM8 {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // set select0 ~ select7
+    // 000 001 010 011 100 101 110 111
+    // select if address[0] == 0 and address[1] == 0(000, 100);
+    DMux8Way(in=load, sel=address, a=select0, b=select1, c=select2,
+    		 d=select3, e=select4, f=select5, g=select6, h=select7);
+
+    Register(in=in, load=select0, out=out0); // reg0
+    Register(in=in, load=select1, out=out1); // reg1
+    Register(in=in, load=select2, out=out2); // reg2
+    Register(in=in, load=select3, out=out3); // reg3
+    Register(in=in, load=select4, out=out4); // reg4
+    Register(in=in, load=select5, out=out5); // reg5
+    Register(in=in, load=select6, out=out6); // reg6
+    Register(in=in, load=select7, out=out7); // reg7
+
+    Mux8Way16(a=out0, b=out1, c=out2, d=out3, e=out4, f=out5,
+    		  g=out6, h=out7, sel=address, out=out);
 }

@@ -16,5 +16,32 @@ CHIP PC {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // 00 : reset
+    // 01 : load
+    // 10 : inc
+    // 11 : else
+
+    // reconfigure flags, if reset == 1: load, inc =0, if load == 1: inc=0
+    Not (in=reset, out=loadavail);
+    And (a=loadavail, b=load, out=finalload);
+    // if reset == 0 and finalload == 0, incavail == 1
+    // incavail & inc == finalinc
+    // Not(Or(reset, finalload)) = incavail
+    Or  (a=reset, b=finalload, out=notincavail);
+    Not (in=notincavail, out=incavail);
+    And (a=incavail, b=inc, out=finalinc);
+
+    // Not(Or3Way(reset, load, inc)) == else
+    Or (a=reset, b=finalload, out=orrl);
+    Or (a=orrl, b=finalinc, out=notelse);
+    Not (in=notelse, out=else);
+
+    Mux16 (a=lastout, b=false, sel=reset, out=newinput);
+    Mux16 (a=newinput, b=in, sel=finalload, out=newinput2);
+    // calculate increased out[t]
+    Inc16 (in=lastout, out=incout);
+    Mux16 (a=newinput2, b=incout, sel=finalinc, out=newinput3);
+    Mux16 (a=newinput3, b=lastout, sel=else, out=dffin);
+
+    Register (in=dffin, load=true, out=lastout, out=out);
 }

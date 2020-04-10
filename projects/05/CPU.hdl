@@ -39,5 +39,61 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+	
+	// process A instruction, if instruction[15] == 0: a instruction
+	Mux16(a=areg, b=instruction, sel=instruction[15], out=newareg);
+	Not(in=instruction[15], out=setareg);
+	Or(a=setareg, b=writeA, out=loadareg)
+	ARegister(in=newareg, load=loadareg, out=areg, out=addressM);
+
+	// select between ARegister and inM
+	// selector is instruction[12] which is an a-bit (refer week 4 unit4.4 5:03)
+	// if instruction[12] == 0 : select AReg 
+	Mux16(a=inM, b=areg, sel=instruction[12], out=aorm);
+
+	// select dreg
+	DRegister(in=aluout, load=writeD, out=dreg);
+
+	// put all into ALU
+	ALU(x=dreg, y=aorm, zx=instruction[11], nx=instruction[10], 
+		zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6],
+		out=aluout, zr=aluzr, ng=alung);
+
+	// set destination flags
+	And (a=instruction[3], b=instruction[3], out=writeM);
+	And (a=instruction[4], b=instruction[4], out=writeD);
+	And (a=instruction[5], b=instruction[5], out=writeA);
+
+
+	// process jmp flags
+	// if aluout == 0: zr = 1
+	// if aluout < 0: ng = 1
+
+	Not(in=zr, out=notzr);
+	Not(in=ng, out=notng);
+	// set jle out <= 0, jgt out > 0 (nr or ng == 0);
+	Or(a=nr, b=ng, out=canjle);
+	Not(in=canjle, out=canjgt);
+	// set jeq out == 0, jne out != 0
+	And(a=notng, b=zr, out=canjeq);
+	Not(in=isjeq, out=canjne);
+
+	DMux8Way(in=true, sel=instruction[0..2], a=isnull, b=isjgt, c=isjeq,
+			 d=isjge, e=isjlt, f=isjne, g=isjle, h=isjmp);
+    And(a=canjgt, b=isjgt, out=setjgt);
+    And(a=canjeq, b=isjeq, out=setjeq);
+    And(a=canjge, b=isjge, out=setjge);
+    And(a=canjlt, b=isjlt, out=setjlt);
+    And(a=canjne, b=isjne, out=setjne);
+    And(a=canjle, b=isjle, out=setjle);
+
+    Mux8Way(a=isnull, b=setjgt, c=setjeq, d=setjge,
+    		e=setjlt, f=setjne, g=setjle, h=isjmp, );
+
+
+	PC(in=areg, load=execjmp, inc=notexecjmp, reset=reset, out=pc);
+
+
+
+    
 }

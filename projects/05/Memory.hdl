@@ -27,5 +27,33 @@ CHIP Memory {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // 0 ~ 0x3fff : RAM16K
+    // 0b011111111111111
+
+    // 0x4000 ~ 0x5fff : Screen
+    // 0b100000000000000 ~
+    // 0b101000000000000
+
+    // 0x6000
+    // 0b110000000000000
+
+    // isram16k
+    Not (in=address[14], out=isram16k);
+
+    // is screen or keyboard
+    DMux(in=true, sel=address[13], a=isscreen0, b=iskeyboard0);
+    And(a=address[14], b=isscreen0, out=isscreen);
+    And(a=address[14], b=iskeyboard0, out=iskeyboard);
+
+    And(a=isram16k, b=load, out=loadram16k);
+    And(a=isscreen, b=load, out=loadscreen);
+
+    RAM16K(in=in, load=loadram16k, address=address[0..13], out=ram16kout);
+    Screen(in=in, load=loadscreen, address=address[0..12], out=screenout);
+    Keyboard(out=keyboardout);
+
+    Mux16 (a=ram16kout, b=screenout, sel=isscreen, out=tmpout0);
+    Mux16 (a=tmpout0, b=keyboardout, sel=iskeyboard, out=tmpout1);
+    Mux16 (a=tmpout1, b=ram16kout, sel=isram16k, out=out);
+
 }
